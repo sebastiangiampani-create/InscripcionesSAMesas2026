@@ -1,117 +1,78 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Inscripciones</title>
 
 <style>
-  body{
-    font-family: Arial, sans-serif;
-    background:#ffffff;
-    color:#000000;
-    margin:20px;
-  }
+body{
+  font-family: Arial, sans-serif;
+  background:#ffffff;
+  color:#000000;
+  margin:20px;
+}
 
-  h1{ margin:0 0 5px; }
+.panel{
+  max-width:1400px;
+  margin:auto;
+}
 
-  .panel{
-    max-width:1400px;
-    margin:auto;
-  }
+h1{
+  margin-bottom:10px;
+}
 
-  .filters{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:15px;
-    margin-bottom:15px;
-  }
+label{
+  font-size:14px;
+  display:block;
+  margin-bottom:5px;
+}
 
-  .filters label{
-    font-size:13px;
-    display:block;
-    margin-bottom:4px;
-  }
+select{
+  padding:6px 8px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  margin-bottom:15px;
+}
 
-  select,input,button{
-    width:100%;
-    padding:6px 8px;
-    border:1px solid #ccc;
-    border-radius:6px;
-    background:#fff;
-    color:#000;
-  }
+.tablewrap{
+  overflow:auto;
+  border:1px solid #ccc;
+}
 
-  .summary{
-    padding:6px 8px;
-    border:1px solid #ccc;
-    border-radius:6px;
-    font-size:13px;
-  }
+table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
 
-  .tablewrap{
-    overflow:auto;
-    border:1px solid #ccc;
-  }
+th,td{
+  padding:8px;
+  border-bottom:1px solid #ddd;
+  font-size:13px;
+  vertical-align:top;
+}
 
-  table{
-    width:100%;
-    border-collapse:collapse;
-    table-layout:fixed;
-  }
+th{
+  background:#f5f5f5;
+  text-align:left;
+}
 
-  th,td{
-    padding:8px;
-    border-bottom:1px solid #ddd;
-    font-size:13px;
-    vertical-align:top;
-  }
+td.num{
+  text-align:right;
+}
 
-  th{
-    background:#f5f5f5;
-    text-align:left;
-  }
+.barbg{
+  height:8px;
+  background:#e5e5e5;
+  border-radius:4px;
+  overflow:hidden;
+}
 
-  td.num, th.num{
-    text-align:right;
-  }
-
-  td.wrap{
-    white-space:normal;
-    word-break:break-word;
-  }
-
-  .badge{
-    background:#f0f0f0;
-    padding:2px 6px;
-    border-radius:4px;
-    display:inline-block;
-  }
-
-  .barbg{
-    height:8px;
-    background:#e5e5e5;
-    border-radius:4px;
-    overflow:hidden;
-  }
-
-  .bar{
-    height:100%;
-    background:#4CAF50;
-  }
-
-  .dot{
-    display:inline-block;
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    margin-right:6px;
-  }
-
-  .g{background:#4CAF50;}
-  .y{background:#f4b400;}
-  .r{background:#d93025;}
-  .s{background:#999;}
+.bar{
+  height:100%;
+  background:#4CAF50;
+}
 </style>
 </head>
 
@@ -120,19 +81,10 @@
 <div class="panel">
   <h1>Visualizador de Inscripciones</h1>
 
-  <div class="filters">
-    <div>
-      <label>Filtrar por Comisión</label>
-      <select id="fArea">
-        <option value="">Todas</option>
-      </select>
-    </div>
-
-    <div>
-      <label>Resumen</label>
-      <div id="summary" class="summary">—</div>
-    </div>
-  </div>
+  <label>Filtrar por Comisión (Área)</label>
+  <select id="fArea">
+    <option value="">Todas</option>
+  </select>
 
   <div class="tablewrap">
     <table>
@@ -161,105 +113,103 @@
 
 const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
 
-const $ = id => document.getElementById(id);
+const tbody = document.getElementById("tbody");
+const selectArea = document.getElementById("fArea");
+
+let allRows = [];
 
 function toNumber(x){
   const n = Number(String(x).replace(",",".").replace("%",""));
   return Number.isFinite(n) ? n : NaN;
 }
 
-function pctFrom(row){
+function calcularPorcentaje(row){
   const cupo = toNumber(row["Cupo"]);
   const ins  = toNumber(row["# Inscr."]);
-  if (Number.isFinite(cupo) && cupo>0 && Number.isFinite(ins))
-    return (ins/cupo)*100;
-  return NaN;
+  if (cupo > 0 && Number.isFinite(ins)) {
+    return Math.round((ins / cupo) * 100);
+  }
+  return 0;
 }
-
-function occ(p){
-  if (!Number.isFinite(p)) return {dot:"s",bar:0,label:"—"};
-  if (p>=100) return {dot:"r",bar:100,label:"Lleno"};
-  if (p>=85) return {dot:"r",bar:p,label:"Alta"};
-  if (p>=50) return {dot:"y",bar:p,label:"Media"};
-  return {dot:"g",bar:p,label:"Baja"};
-}
-
-let rowsAll = [];
 
 function render(rows){
-  const tb = $("tbody");
-  let sumC=0, sumI=0;
 
-  tb.innerHTML = rows.map(r=>{
-    const p = pctFrom(r);
-    const o = occ(p);
-    const cupo = toNumber(r["Cupo"]);
-    const ins  = toNumber(r["# Inscr."]);
+  if(rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="9">Sin resultados</td></tr>`;
+    return;
+  }
 
-    if(Number.isFinite(cupo)) sumC+=cupo;
-    if(Number.isFinite(ins)) sumI+=ins;
+  tbody.innerHTML = rows.map(r => {
+
+    const porcentaje = calcularPorcentaje(r);
 
     return `
-    <tr>
-      <td>${r["Dia"]||""}</td>
-      <td>${r["Fecha"]||""}</td>
-      <td>${r["Horario"]||""}</td>
-      <td class="wrap"><span class="badge">${r["Sede"]||""}</span></td>
-      <td class="wrap"><span class="badge">${r["Área"]||r["Area"]||""}</span></td>
-      <td class="num">${cupo||""}</td>
-      <td class="num">${ins||""}</td>
-      <td><span class="dot ${o.dot}"></span>${Number.isFinite(p)?p.toFixed(0)+"%":""}</td>
-      <td>
-        <div class="barbg"><div class="bar" style="width:${o.bar}%"></div></div>
-      </td>
-    </tr>`;
+      <tr>
+        <td>${r["Dia"] || ""}</td>
+        <td>${r["Fecha"] || ""}</td>
+        <td>${r["Horario"] || ""}</td>
+        <td>${r["Sede"] || ""}</td>
+        <td>${r["Área"] || r["Area"] || ""}</td>
+        <td class="num">${r["Cupo"] || ""}</td>
+        <td class="num">${r["# Inscr."] || ""}</td>
+        <td>${porcentaje}%</td>
+        <td>
+          <div class="barbg">
+            <div class="bar" style="width:${porcentaje}%"></div>
+          </div>
+        </td>
+      </tr>
+    `;
   }).join("");
-
-  const pctTotal = sumC>0 ? (sumI/sumC)*100 : NaN;
-  $("summary").textContent =
-    rows.length + " filas · " + sumI + " inscripciones · " + sumC +
-    " cupos · " + (Number.isFinite(pctTotal)?pctTotal.toFixed(0)+"%":"");
 }
 
-function fillFilter(){
-  const select = $("fArea");
-  const areas = [...new Set(rowsAll.map(r => r["Área"]||r["Area"]||""))].sort();
-  select.innerHTML = `<option value="">Todas</option>` +
-    areas.map(a => `<option value="${a}">${a}</option>`).join("");
+function cargarFiltro(){
+
+  const areasUnicas = [...new Set(
+    allRows.map(r => r["Área"] || r["Area"] || "")
+  )].filter(a => a !== "").sort();
+
+  selectArea.innerHTML = `<option value="">Todas</option>` +
+    areasUnicas.map(a => `<option value="${a}">${a}</option>`).join("");
 }
 
-function applyFilter(){
-  const value = $("fArea").value;
-  const filtered = value ? rowsAll.filter(r =>
-    (r["Área"]||r["Area"]||"") === value
-  ) : rowsAll;
+selectArea.addEventListener("change", () => {
 
-  render(filtered);
-}
+  const valor = selectArea.value;
 
-function load(){
-  Papa.parse(csvUrl,{
+  if(valor === ""){
+    render(allRows);
+  } else {
+    const filtradas = allRows.filter(r =>
+      (r["Área"] || r["Area"] || "") === valor
+    );
+    render(filtradas);
+  }
+
+});
+
+function cargarDatos(){
+  Papa.parse(csvUrl, {
     download:true,
     header:true,
     skipEmptyLines:true,
-    complete:(res)=>{
-      rowsAll = res.data;
+    complete:(resultado)=>{
+      allRows = resultado.data;
 
-      rowsAll.sort((a,b)=>{
+      // orden simple
+      allRows.sort((a,b)=>{
         return (a["Dia"]||"").localeCompare(b["Dia"]||"")
           || (a["Horario"]||"").localeCompare(b["Horario"]||"")
           || (a["Sede"]||"").localeCompare(b["Sede"]||"");
       });
 
-      fillFilter();
-      render(rowsAll);
+      cargarFiltro();
+      render(allRows);
     }
   });
 }
 
-$("fArea").addEventListener("change", applyFilter);
-
-load();
+cargarDatos();
 
 </script>
 
