@@ -6,48 +6,122 @@
 <title>Inscripciones</title>
 
 <style>
-  body{font-family:system-ui,Arial,sans-serif;background:#0b1220;color:#fff;margin:18px;}
-  h1{margin:0 0 6px;font-size:22px}
-  .muted{opacity:.75;font-size:13px;margin-bottom:14px}
-  .panel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;max-width:1300px;margin:auto;}
-  .filters{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}
-  .filters label{font-size:12px;opacity:.75;margin-bottom:4px;display:block}
+  body{
+    font-family: Arial, sans-serif;
+    background:#ffffff;
+    color:#000000;
+    margin:20px;
+  }
+
+  h1{ margin:0 0 5px; }
+
+  .panel{
+    max-width:1400px;
+    margin:auto;
+  }
+
+  .filters{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:10px;
+    margin-bottom:15px;
+  }
+
+  .filters label{
+    font-size:13px;
+    display:block;
+    margin-bottom:4px;
+  }
+
   select,input,button{
-    width:100%;padding:8px 10px;border-radius:10px;
-    border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;
+    width:100%;
+    padding:6px 8px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    background:#fff;
+    color:#000;
   }
-  button{cursor:pointer}
-  .summary{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);font-size:13px}
-  .tablewrap{overflow:auto;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
-  table{width:100%;border-collapse:collapse;table-layout:fixed;background:rgba(255,255,255,.03)}
-  th,td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top;font-size:13px}
-  th{background:rgba(255,255,255,.08);text-align:left;position:sticky;top:0}
-  td.num,th.num{text-align:right}
-  td.wrap{white-space:normal;word-break:break-word}
-  .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.10)}
-  .barbg{height:10px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}
-  .bar{height:100%;background:#10b981}
-  .dot{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:6px}
-  .g{background:#22c55e}.y{background:#f59e0b}.r{background:#ef4444}.s{background:#9ca3af}
-  .rowline{display:flex;align-items:center;gap:10px}
-  @media (max-width: 1050px){
-    .filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+  button{ cursor:pointer; }
+
+  .summary{
+    padding:6px 8px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:13px;
   }
+
+  .tablewrap{
+    overflow:auto;
+    border:1px solid #ccc;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+  }
+
+  th,td{
+    padding:8px;
+    border-bottom:1px solid #ddd;
+    font-size:13px;
+    vertical-align:top;
+  }
+
+  th{
+    background:#f5f5f5;
+    text-align:left;
+  }
+
+  td.num, th.num{
+    text-align:right;
+  }
+
+  td.wrap{
+    white-space:normal;
+    word-break:break-word;
+  }
+
+  .badge{
+    background:#f0f0f0;
+    padding:2px 6px;
+    border-radius:4px;
+    display:inline-block;
+  }
+
+  .barbg{
+    height:8px;
+    background:#e5e5e5;
+    border-radius:4px;
+    overflow:hidden;
+  }
+
+  .bar{
+    height:100%;
+    background:#4CAF50;
+  }
+
+  .dot{
+    display:inline-block;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    margin-right:6px;
+  }
+
+  .g{background:#4CAF50;}
+  .y{background:#f4b400;}
+  .r{background:#d93025;}
+  .s{background:#999;}
+
 </style>
 </head>
 
 <body>
+
 <div class="panel">
-  <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap">
-    <div>
-      <h1>Visualizador de Inscripciones</h1>
-      <div class="muted">Orden fijo: Día → Horario → Sede → Comisión. Sin reordenar, sin “cosas que desaparecen”.</div>
-    </div>
-    <div style="display:flex;gap:10px;min-width:260px">
-      <button id="reload">Recargar</button>
-      <button id="openCsv">Abrir CSV</button>
-    </div>
-  </div>
+  <h1>Visualizador de Inscripciones</h1>
 
   <div class="filters">
     <div>
@@ -63,12 +137,8 @@
       <select id="fSede"><option value="">Todas</option></select>
     </div>
     <div>
-      <label>Comisión (Área)</label>
+      <label>Comisión</label>
       <select id="fArea"><option value="">Todas</option></select>
-    </div>
-    <div>
-      <label>Buscar (texto)</label>
-      <input id="q" placeholder="Ej: Belgrano / Arte / 14 a 17" />
     </div>
     <div>
       <label>Resumen</label>
@@ -80,19 +150,19 @@
     <table>
       <thead>
         <tr>
-          <th style="width:90px">Día</th>
-          <th style="width:90px">Fecha</th>
-          <th style="width:100px">Horario</th>
-          <th style="width:320px">Sede</th>
-          <th style="width:360px">Comisión</th>
-          <th class="num" style="width:70px">Cupo</th>
-          <th class="num" style="width:80px">Inscr.</th>
-          <th style="width:80px">%</th>
-          <th style="width:210px">Ocupación</th>
+          <th>Día</th>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th>Sede</th>
+          <th>Comisión</th>
+          <th class="num">Cupo</th>
+          <th class="num">Inscr.</th>
+          <th>%</th>
+          <th>Ocupación</th>
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="9">Cargando…</td></tr>
+        <tr><td colspan="9">Cargando...</td></tr>
       </tbody>
     </table>
   </div>
@@ -100,213 +170,95 @@
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
-  const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
 
-  const colAliases = {
-    dia: ["Dia","Día","dia","día"],
-    fecha: ["Fecha","fecha"],
-    horario: ["Horario","horario"],
-    sede: ["Sede","sede"],
-    area: ["Área","Area","area","área"],
-    cupo: ["Cupo","cupo"],
-    inscritos: ["# Inscr.","#Inscr.","Inscr.","Inscritos","inscritos","# Insc","# Insc."],
-    porcentaje: ["%","Porcentaje","% ","porcentaje"]
-  };
+const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
 
-  const $ = id => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-  function pick(row, key){
-    for (const n of (colAliases[key]||[])) if (row[n] !== undefined) return row[n];
-    return "";
-  }
-  function toNumber(x){
-    const s = String(x ?? "").trim().replace(/\./g,"").replace(",",".").replace("%","");
-    const n = Number(s);
-    return Number.isFinite(n) ? n : NaN;
-  }
-  function pctFrom(row){
-    const pctRaw = pick(row,"porcentaje");
-    const pct = toNumber(pctRaw);
-    if (Number.isFinite(pct)) return pct;
-    const cupo = toNumber(pick(row,"cupo"));
-    const ins  = toNumber(pick(row,"inscritos"));
-    if (Number.isFinite(cupo) && cupo>0 && Number.isFinite(ins)) return (ins/cupo)*100;
-    return NaN;
-  }
-  function diaOrder(dia){
-    const d = String(dia||"").toLowerCase();
-    const map = { lunes:1, martes:2, miercoles:3, miércoles:3, jueves:4, viernes:5, sabado:6, sábado:6, domingo:7 };
-    return map[d] ?? 99;
-  }
-  function horarioKey(h){
-    const s = String(h||"").trim();
-    const m = s.match(/(\d{1,2})(?::\d{2})?/);
-    return m ? Number(m[1]) : 999;
-  }
-  function fechaKey(fechaStr){
-    const s = String(fechaStr||"").trim();
-    const m = s.match(/^(\d{1,2})\/(\d{1,2})/);
-    if (!m) return 999999;
-    const dd = String(m[1]).padStart(2,"0");
-    const mm = String(m[2]).padStart(2,"0");
-    return Number(mm + dd);
-  }
+function pick(row, name){
+  return row[name] ?? "";
+}
 
-  function esc(s){
-    return String(s ?? "")
-      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-  }
+function toNumber(x){
+  const n = Number(String(x).replace(",",".").replace("%",""));
+  return Number.isFinite(n) ? n : NaN;
+}
 
-  function uniqueValues(rows, key){
-    const set = new Set();
-    for (const r of rows){
-      const v = String(pick(r,key) ?? "").trim();
-      if (v) set.add(v);
+function pctFrom(row){
+  const cupo = toNumber(row["Cupo"]);
+  const ins  = toNumber(row["# Inscr."]);
+  if (Number.isFinite(cupo) && cupo>0 && Number.isFinite(ins))
+    return (ins/cupo)*100;
+  return NaN;
+}
+
+function occ(p){
+  if (!Number.isFinite(p)) return {dot:"s",bar:0,label:"—"};
+  if (p>=100) return {dot:"r",bar:100,label:"Lleno"};
+  if (p>=85) return {dot:"r",bar:p,label:"Alta"};
+  if (p>=50) return {dot:"y",bar:p,label:"Media"};
+  return {dot:"g",bar:p,label:"Baja"};
+}
+
+let rowsAll = [];
+
+function render(rows){
+  const tb = $("tbody");
+  let sumC=0, sumI=0;
+
+  tb.innerHTML = rows.map(r=>{
+    const p = pctFrom(r);
+    const o = occ(p);
+    const cupo = toNumber(r["Cupo"]);
+    const ins  = toNumber(r["# Inscr."]);
+
+    if(Number.isFinite(cupo)) sumC+=cupo;
+    if(Number.isFinite(ins)) sumI+=ins;
+
+    return `
+    <tr>
+      <td>${r["Dia"]||""}</td>
+      <td>${r["Fecha"]||""}</td>
+      <td>${r["Horario"]||""}</td>
+      <td class="wrap"><span class="badge">${r["Sede"]||""}</span></td>
+      <td class="wrap"><span class="badge">${r["Área"]||r["Area"]||""}</span></td>
+      <td class="num">${cupo||""}</td>
+      <td class="num">${ins||""}</td>
+      <td><span class="dot ${o.dot}"></span>${Number.isFinite(p)?p.toFixed(0)+"%":""}</td>
+      <td>
+        <div class="barbg"><div class="bar" style="width:${o.bar}%"></div></div>
+      </td>
+    </tr>`;
+  }).join("");
+
+  const pctTotal = sumC>0 ? (sumI/sumC)*100 : NaN;
+  $("summary").textContent =
+    rows.length + " filas · " + sumI + " inscripciones · " + sumC +
+    " cupos · " + (Number.isFinite(pctTotal)?pctTotal.toFixed(0)+"%":"");
+}
+
+function load(){
+  Papa.parse(csvUrl,{
+    download:true,
+    header:true,
+    skipEmptyLines:true,
+    complete:(res)=>{
+      rowsAll = res.data;
+
+      rowsAll.sort((a,b)=>{
+        return (a["Dia"]||"").localeCompare(b["Dia"]||"")
+          || (a["Horario"]||"").localeCompare(b["Horario"]||"")
+          || (a["Sede"]||"").localeCompare(b["Sede"]||"");
+      });
+
+      render(rowsAll);
     }
-    return Array.from(set).sort((a,b)=>a.localeCompare(b,"es"));
-  }
-
-  function occ(pct){
-    if (!Number.isFinite(pct)) return {label:"—", dot:"s", bar:0};
-    if (pct>=100) return {label:"Lleno", dot:"r", bar:100};
-    if (pct>=85)  return {label:"Alta",  dot:"r", bar:Math.min(100,pct)};
-    if (pct>=50)  return {label:"Media", dot:"y", bar:Math.min(100,pct)};
-    return {label:"Baja", dot:"g", bar:Math.min(100,pct)};
-  }
-
-  let rowsAll = [];
-
-  function fillFilters(rows){
-    const add = (selId, key, firstText) => {
-      const sel = $(selId);
-      sel.innerHTML = `<option value="">${firstText}</option>` +
-        uniqueValues(rows, key).map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
-    };
-    add("fDia","dia","Todos");
-    add("fHorario","horario","Todos");
-    add("fSede","sede","Todas");
-    add("fArea","area","Todas");
-  }
-
-  function apply(){
-    const fd = $("fDia").value.trim().toLowerCase();
-    const fh = $("fHorario").value.trim().toLowerCase();
-    const fs = $("fSede").value.trim().toLowerCase();
-    const fa = $("fArea").value.trim().toLowerCase();
-    const q  = $("q").value.trim().toLowerCase();
-
-    const filtered = rowsAll.filter(r => {
-      const dia = String(pick(r,"dia")||"").toLowerCase();
-      const fecha = String(pick(r,"fecha")||"").toLowerCase();
-      const horario = String(pick(r,"horario")||"").toLowerCase();
-      const sede = String(pick(r,"sede")||"").toLowerCase();
-      const area = String(pick(r,"area")||"").toLowerCase();
-
-      if (fd && dia !== fd) return false;
-      if (fh && horario !== fh) return false;
-      if (fs && sede !== fs) return false;
-      if (fa && area !== fa) return false;
-
-      if (q) {
-        const blob = `${dia} ${fecha} ${horario} ${sede} ${area}`.toLowerCase();
-        if (!blob.includes(q)) return false;
-      }
-      return true;
-    });
-
-    render(filtered);
-  }
-
-  function render(rows){
-    const tb = $("tbody");
-    if (!rows.length){
-      tb.innerHTML = `<tr><td colspan="9">Sin resultados</td></tr>`;
-      $("summary").textContent = "0 filas";
-      return;
-    }
-
-    let sumC=0, sumI=0;
-    tb.innerHTML = rows.map(r => {
-      const dia = pick(r,"dia");
-      const fecha = pick(r,"fecha");
-      const horario = pick(r,"horario");
-      const sede = pick(r,"sede");
-      const area = pick(r,"area");
-      const cupo = toNumber(pick(r,"cupo"));
-      const ins  = toNumber(pick(r,"inscritos"));
-      const pct  = pctFrom(r);
-      const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
-      const o = occ(pct);
-
-      if (Number.isFinite(cupo)) sumC += cupo;
-      if (Number.isFinite(ins)) sumI += ins;
-
-      return `
-        <tr>
-          <td>${esc(dia)}</td>
-          <td>${esc(fecha)}</td>
-          <td>${esc(horario)}</td>
-          <td class="wrap"><span class="badge">${esc(sede)}</span></td>
-          <td class="wrap"><span class="badge">${esc(area)}</span></td>
-          <td class="num">${Number.isFinite(cupo)?cupo:esc(pick(r,"cupo"))}</td>
-          <td class="num">${Number.isFinite(ins)?ins:esc(pick(r,"inscritos"))}</td>
-          <td>
-            <div class="rowline"><span class="dot ${o.dot}"></span>${pctTxt}</div>
-          </td>
-          <td>
-            <div class="barbg"><div class="bar" style="width:${o.bar}%"></div></div>
-            <div class="muted" style="font-size:12px;margin-top:4px">${o.label}</div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-
-    const pctTotal = sumC>0 ? (sumI/sumC)*100 : NaN;
-    $("summary").textContent = Number.isFinite(pctTotal)
-      ? `${rows.length} filas · ${sumI} inscripciones · ${sumC} cupos · ${pctTotal.toFixed(0)}% ocupación`
-      : `${rows.length} filas · ${sumI} inscripciones · ${sumC} cupos`;
-  }
-
-  function load(){
-    $("openCsv").onclick = () => window.open(csvUrl, "_blank");
-    $("reload").onclick = load;
-
-    Papa.parse(csvUrl, {
-      download:true,
-      header:true,
-      skipEmptyLines:true,
-      complete: (results) => {
-        rowsAll = (results.data || []).filter(r => Object.values(r).some(v => String(v??"").trim() !== ""));
-
-        // ✅ ORDEN FIJO (NO SE ROMPE)
-        rowsAll.sort((a,b) => {
-          const d = diaOrder(pick(a,"dia")) - diaOrder(pick(b,"dia"));
-          if (d) return d;
-          const f = fechaKey(pick(a,"fecha")) - fechaKey(pick(b,"fecha"));
-          if (f) return f;
-          const h = horarioKey(pick(a,"horario")) - horarioKey(pick(b,"horario"));
-          if (h) return h;
-          const s = String(pick(a,"sede")||"").localeCompare(String(pick(b,"sede")||""),"es");
-          if (s) return s;
-          return String(pick(a,"area")||"").localeCompare(String(pick(b,"area")||""),"es");
-        });
-
-        fillFilters(rowsAll);
-        apply();
-      },
-      error: () => {
-        $("tbody").innerHTML = `<tr><td colspan="9">Error cargando CSV</td></tr>`;
-      }
-    });
-  }
-
-  ["fDia","fHorario","fSede","fArea","q"].forEach(id => {
-    document.addEventListener("input", (e) => { if (e.target && e.target.id === id) apply(); });
-    document.addEventListener("change", (e) => { if (e.target && e.target.id === id) apply(); });
   });
+}
 
-  load();
+load();
+
 </script>
+
 </body>
 </html>
