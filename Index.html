@@ -1,1 +1,408 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Visualizador de Inscripciones</title>
 
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- DataTables (con estilo Bootstrap) -->
+  <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+  <style>
+    body { background: #0b1220; }
+    .app-shell {
+      max-width: 1200px;
+      margin: 28px auto;
+      padding: 22px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .title { color: #fff; }
+    .muted { color: rgba(255,255,255,.7); }
+    table.dataTable tbody tr { vertical-align: middle; }
+    .badge-soft {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.18);
+      color: #fff;
+      font-weight: 600;
+    }
+    .progress { height: 10px; background: rgba(255,255,255,.12); }
+    .progress-bar { transition: width .25s ease; }
+    .dt-search input, .dt-length select {
+      background: rgba(255,255,255,.08) !important;
+      border: 1px solid rgba(255,255,255,.18) !important;
+      color: #fff !important;
+    }
+    .dataTables_info, .dataTables_paginate, .dataTables_length, .dataTables_filter, label, .pagination * {
+      color: rgba(255,255,255,.8) !important;
+    }
+    .table { --bs-table-bg: rgba(255,255,255,.04); --bs-table-color: #fff; }
+    .table thead th {
+      background: rgba(255,255,255,.10);
+      border-bottom: 1px solid rgba(255,255,255,.14);
+    }
+    .table tbody td { border-top: 1px solid rgba(255,255,255,.08); }
+    .chip { display:inline-flex; align-items:center; gap:8px; }
+    .dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
+    .dot-ok { background:#22c55e; }
+    .dot-mid { background:#f59e0b; }
+    .dot-hi { background:#ef4444; }
+    .smallish { font-size: .92rem; }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+      <div>
+        <h1 class="title h3 mb-1">Visualizador de Inscripciones</h1>
+        <div class="muted small">Leyendo datos desde Google Sheets (CSV) y mostrándolos con filtros + ocupación.</div>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <button id="btnReload" class="btn btn-outline-light btn-sm">🔄 Recargar</button>
+        <a id="btnOpenCsv" class="btn btn-light btn-sm" target="_blank" rel="noopener">Abrir CSV</a>
+      </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+      <div class="col-12 col-md-3">
+        <label class="muted small mb-1">Filtro por Sede</label>
+        <select id="filterSede" class="form-select form-select-sm">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="muted small mb-1">Filtro por Área</label>
+        <select id="filterArea" class="form-select form-select-sm">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="muted small mb-1">Mostrar solo</label>
+        <select id="filterOcupacion" class="form-select form-select-sm">
+          <option value="">Todo</option>
+          <option value="low">Baja ocupación (&lt; 50%)</option>
+          <option value="mid">Media (50% - 85%)</option>
+          <option value="high">Alta (&gt;= 85%)</option>
+          <option value="full">Lleno / sin cupo (>= 100%)</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="muted small mb-1">Resumen</label>
+        <div id="summary" class="p-2 rounded smallish" style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#fff;">
+          —
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table id="tabla" class="table table-hover table-striped align-middle w-100">
+        <thead>
+          <tr>
+            <th>Día</th>
+            <th>Fecha</th>
+            <th>Horario</th>
+            <th>Sede</th>
+            <th>Área</th>
+            <th class="text-end">Cupo</th>
+            <th class="text-end"># Inscr.</th>
+            <th>%</th>
+            <th>Ocupación</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="muted small mt-3">
+      Tip: si en tu CSV la columna “%” viene vacía, se calcula sola con <code># Inscr. / Cupo</code>.
+    </div>
+  </div>
+
+  <!-- PapaParse (CSV parser) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- jQuery + DataTables -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@2.1.8/js/dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/js/dataTables.bootstrap5.min.js"></script>
+
+  <script>
+    // 👉 Tu CSV publicado
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
+
+    // Mapeo flexible de nombres de columnas (por si varía el header)
+    const colAliases = {
+      dia: ["Dia", "Día", "dia", "día"],
+      fecha: ["Fecha", "fecha"],
+      horario: ["Horario", "horario"],
+      sede: ["Sede", "sede"],
+      area: ["Área", "Area", "area", "área"],
+      cupo: ["Cupo", "cupo"],
+      inscritos: ["# Inscr.", "#Inscr.", "Inscr.", "Inscritos", "inscritos", "Inscriptos", "# Insc", "# Insc."],
+      porcentaje: ["%", "Porcentaje", "% ", "porcentaje"]
+    };
+
+    function pick(row, key) {
+      const names = colAliases[key] || [];
+      for (const n of names) {
+        if (row[n] !== undefined) return row[n];
+      }
+      return "";
+    }
+
+    function toNumber(x) {
+      if (x === null || x === undefined) return NaN;
+      const s = String(x).trim()
+        .replace(/\./g, "")      // miles con punto
+        .replace(",", ".")       // decimal con coma
+        .replace("%", "");
+      const num = Number(s);
+      return Number.isFinite(num) ? num : NaN;
+    }
+
+    function pctFrom(row) {
+      const pctRaw = pick(row, "porcentaje");
+      let pct = toNumber(pctRaw);
+      if (Number.isFinite(pct)) return pct;
+
+      const cupo = toNumber(pick(row, "cupo"));
+      const ins = toNumber(pick(row, "inscritos"));
+      if (Number.isFinite(cupo) && cupo > 0 && Number.isFinite(ins)) {
+        return (ins / cupo) * 100;
+      }
+      return NaN;
+    }
+
+    function occClass(pct) {
+      if (!Number.isFinite(pct)) return { label: "—", dot: "", bar: "bg-secondary" };
+      if (pct >= 100) return { label: "Lleno", dot: "dot-hi", bar: "bg-danger" };
+      if (pct >= 85)  return { label: "Alta",  dot: "dot-hi", bar: "bg-danger" };
+      if (pct >= 50)  return { label: "Media", dot: "dot-mid", bar: "bg-warning" };
+      return { label: "Baja", dot: "dot-ok", bar: "bg-success" };
+    }
+
+    let dt = null;
+    let rawRows = [];
+
+    function renderTable(rows) {
+      const tbody = document.querySelector("#tabla tbody");
+      tbody.innerHTML = "";
+
+      for (const r of rows) {
+        const dia = pick(r, "dia");
+        const fecha = pick(r, "fecha");
+        const horario = pick(r, "horario");
+        const sede = pick(r, "sede");
+        const area = pick(r, "area");
+        const cupoRaw = pick(r, "cupo");
+        const insRaw = pick(r, "inscritos");
+
+        const cupo = toNumber(cupoRaw);
+        const ins = toNumber(insRaw);
+        const pct = pctFrom(r);
+        const pctClamped = Number.isFinite(pct) ? Math.max(0, Math.min(120, pct)) : 0;
+        const occ = occClass(pct);
+
+        const pctText = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
+
+        const tr = document.createElement("tr");
+        tr.dataset.sede = (sede || "").toLowerCase();
+        tr.dataset.area = (area || "").toLowerCase();
+        tr.dataset.occ = Number.isFinite(pct) ? (pct >= 100 ? "full" : (pct >= 85 ? "high" : (pct >= 50 ? "mid" : "low"))) : "";
+
+        tr.innerHTML = `
+          <td>${escapeHtml(dia)}</td>
+          <td>${escapeHtml(fecha)}</td>
+          <td>${escapeHtml(horario)}</td>
+          <td><span class="badge badge-soft">${escapeHtml(sede)}</span></td>
+          <td><span class="badge badge-soft">${escapeHtml(area)}</span></td>
+          <td class="text-end">${Number.isFinite(cupo) ? cupo : escapeHtml(cupoRaw)}</td>
+          <td class="text-end">${Number.isFinite(ins) ? ins : escapeHtml(insRaw)}</td>
+          <td>
+            <span class="chip">
+              <span class="dot ${occ.dot}"></span>
+              <span>${pctText}</span>
+            </span>
+          </td>
+          <td style="min-width:170px;">
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" role="progressbar" aria-valuenow="${pctClamped}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar ${occ.bar}" style="width:${Math.min(100, pctClamped)}%"></div>
+              </div>
+              <span class="small muted" style="min-width:54px;">${occ.label}</span>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      if (dt) {
+        dt.destroy();
+        dt = null;
+      }
+
+      dt = new DataTable("#tabla", {
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        order: [[1, "asc"], [2, "asc"]],
+        language: {
+          search: "Buscar:",
+          lengthMenu: "Mostrar _MENU_",
+          info: "Mostrando _START_ a _END_ de _TOTAL_",
+          infoEmpty: "Sin datos",
+          zeroRecords: "No encontré nada con ese filtro",
+          paginate: { first: "Primero", last: "Último", next: ">", previous: "<" }
+        }
+      });
+
+      updateSummary(rows);
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function uniqueValues(rows, key) {
+      const set = new Set();
+      for (const r of rows) {
+        const v = (pick(r, key) || "").trim();
+        if (v) set.add(v);
+      }
+      return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
+    }
+
+    function populateFilters(rows) {
+      const sedeSel = document.querySelector("#filterSede");
+      const areaSel = document.querySelector("#filterArea");
+
+      const sedes = uniqueValues(rows, "sede");
+      const areas = uniqueValues(rows, "area");
+
+      sedeSel.innerHTML = `<option value="">Todas</option>` + sedes.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+      areaSel.innerHTML = `<option value="">Todas</option>` + areas.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("");
+    }
+
+    function applyFilters() {
+      const sede = document.querySelector("#filterSede").value.trim().toLowerCase();
+      const area = document.querySelector("#filterArea").value.trim().toLowerCase();
+      const occ = document.querySelector("#filterOcupacion").value;
+
+      // DataTables: filtramos con búsqueda personalizada basada en dataset
+      $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(fn => fn.__ours !== true);
+
+      const filterFn = function(settings, data, dataIndex) {
+        const row = dt.row(dataIndex).node();
+        if (!row) return true;
+
+        if (sede && row.dataset.sede !== sede) return false;
+        if (area && row.dataset.area !== area) return false;
+        if (occ && row.dataset.occ !== occ) return false;
+
+        return true;
+      };
+      filterFn.__ours = true;
+      $.fn.dataTable.ext.search.push(filterFn);
+
+      dt.draw();
+
+      // Resumen basado en filas visibles
+      const visible = [];
+      dt.rows({ filter: "applied" }).every(function() {
+        const idx = this.index();
+        const node = this.node();
+        // reconstruimos desde rawRows por orden de render: aproximación OK para resumen
+        // (si querés exactitud total con sorting/paging, lo mejor es mapear por ID)
+        visible.push(node);
+      });
+
+      updateSummaryFromVisible();
+    }
+
+    function updateSummary(rows) {
+      // resumen global inicial
+      const total = rows.length;
+      let sumCupo = 0, sumIns = 0, countCupo = 0;
+
+      for (const r of rows) {
+        const c = toNumber(pick(r,"cupo"));
+        const i = toNumber(pick(r,"inscritos"));
+        if (Number.isFinite(c)) { sumCupo += c; countCupo++; }
+        if (Number.isFinite(i)) sumIns += i;
+      }
+
+      const pct = (sumCupo > 0) ? (sumIns / sumCupo) * 100 : NaN;
+      const txt = Number.isFinite(pct)
+        ? `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
+        : `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos`;
+
+      document.querySelector("#summary").textContent = txt;
+    }
+
+    function updateSummaryFromVisible() {
+      const nodes = dt.rows({ filter: "applied" }).nodes().toArray();
+      const total = nodes.length;
+
+      let sumCupo = 0, sumIns = 0;
+
+      for (const n of nodes) {
+        // columnas: Cupo (5) y Inscr (6)
+        const tds = n.querySelectorAll("td");
+        const cupo = toNumber(tds[5]?.textContent ?? "");
+        const ins  = toNumber(tds[6]?.textContent ?? "");
+        if (Number.isFinite(cupo)) sumCupo += cupo;
+        if (Number.isFinite(ins)) sumIns += ins;
+      }
+
+      const pct = (sumCupo > 0) ? (sumIns / sumCupo) * 100 : NaN;
+      const txt = Number.isFinite(pct)
+        ? `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
+        : `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos`;
+
+      document.querySelector("#summary").textContent = txt;
+    }
+
+    function load() {
+      document.querySelector("#btnOpenCsv").href = csvUrl;
+
+      Papa.parse(csvUrl, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          rawRows = (results.data || []).filter(r => Object.values(r).some(v => String(v ?? "").trim() !== ""));
+          populateFilters(rawRows);
+          renderTable(rawRows);
+          wireFilters();
+          applyFilters();
+        },
+        error: (err) => {
+          console.error(err);
+          alert("No pude leer el CSV. Revisá que esté publicado y accesible.");
+        }
+      });
+    }
+
+    function wireFilters() {
+      document.querySelector("#filterSede").onchange = applyFilters;
+      document.querySelector("#filterArea").onchange = applyFilters;
+      document.querySelector("#filterOcupacion").onchange = applyFilters;
+      document.querySelector("#btnReload").onclick = () => load();
+    }
+
+    load();
+  </script>
+</body>
+</html>
