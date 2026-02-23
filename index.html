@@ -1,456 +1,312 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Visualizador de Inscripciones</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inscripciones</title>
 
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-
-  <style>
-    body { background:#0b1220; }
-    .app-shell{
-      max-width: 1350px;
-      margin: 16px auto;
-      padding: 14px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 18px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-    }
-    .title { color:#fff; }
-    .muted { color: rgba(255,255,255,.7); }
-
-    /* Compacto */
-    .table td, .table th { padding:.32rem .40rem !important; font-size:.90rem; }
-    .table { --bs-table-bg: rgba(255,255,255,.04); --bs-table-color:#fff; }
-    .table thead th { background: rgba(255,255,255,.10); border-bottom:1px solid rgba(255,255,255,.14); }
-    .table tbody td { border-top:1px solid rgba(255,255,255,.08); }
-    table.dataTable { width:100% !important; }
-
-    /* ✅ Para que NO “desaparezca” texto */
-    #tabla { table-layout: fixed; }
-    #tabla th, #tabla td { overflow: hidden; }
-    /* Sede y Comisión (Área) con wrap, sin cortar */
-    #tabla td:nth-child(3),
-    #tabla td:nth-child(4) {
-      white-space: normal !important;
-      word-break: break-word;
-    }
-
-    .badge-soft{
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.18);
-      color:#fff;
-      font-weight:600;
-    }
-
-    .progress{ height:10px; background: rgba(255,255,255,.12); }
-    .progress-bar{ transition: width .25s ease; }
-
-    .dt-search input, .dt-length select, .form-select{
-      background: rgba(255,255,255,.08) !important;
-      border: 1px solid rgba(255,255,255,.18) !important;
-      color:#fff !important;
-    }
-    .dataTables_info, .dataTables_paginate, .dataTables_length, .dataTables_filter, label, .pagination *{
-      color: rgba(255,255,255,.8) !important;
-    }
-
-    .chip { display:inline-flex; align-items:center; gap:8px; }
-    .dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
-    .dot-ok{ background:#22c55e; }
-    .dot-mid{ background:#f59e0b; }
-    .dot-hi{ background:#ef4444; }
-    .smallish{ font-size:.92rem; }
-  </style>
+<style>
+  body{font-family:system-ui,Arial,sans-serif;background:#0b1220;color:#fff;margin:18px;}
+  h1{margin:0 0 6px;font-size:22px}
+  .muted{opacity:.75;font-size:13px;margin-bottom:14px}
+  .panel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;max-width:1300px;margin:auto;}
+  .filters{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:12px}
+  .filters label{font-size:12px;opacity:.75;margin-bottom:4px;display:block}
+  select,input,button{
+    width:100%;padding:8px 10px;border-radius:10px;
+    border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;
+  }
+  button{cursor:pointer}
+  .summary{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);font-size:13px}
+  .tablewrap{overflow:auto;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;background:rgba(255,255,255,.03)}
+  th,td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top;font-size:13px}
+  th{background:rgba(255,255,255,.08);text-align:left;position:sticky;top:0}
+  td.num,th.num{text-align:right}
+  td.wrap{white-space:normal;word-break:break-word}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.10)}
+  .barbg{height:10px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}
+  .bar{height:100%;background:#10b981}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:6px}
+  .g{background:#22c55e}.y{background:#f59e0b}.r{background:#ef4444}.s{background:#9ca3af}
+  .rowline{display:flex;align-items:center;gap:10px}
+  @media (max-width: 1050px){
+    .filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+</style>
 </head>
 
 <body>
-  <div class="app-shell">
-    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
-      <div>
-        <h1 class="title h3 mb-1">Visualizador de Inscripciones</h1>
-        <div class="muted small">Orden fijo: Día → Horario → Sede → Comisión. Sin “magia” que rompa el orden.</div>
-      </div>
-      <div class="d-flex gap-2 align-items-center">
-        <button id="btnReload" class="btn btn-outline-light btn-sm">🔄 Recargar</button>
-        <a id="btnOpenCsv" class="btn btn-light btn-sm" target="_blank" rel="noopener">Abrir CSV</a>
-      </div>
+<div class="panel">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap">
+    <div>
+      <h1>Visualizador de Inscripciones</h1>
+      <div class="muted">Orden fijo: Día → Horario → Sede → Comisión. Sin reordenar, sin “cosas que desaparecen”.</div>
     </div>
-
-    <!-- FILTROS -->
-    <div class="row g-2 mb-3">
-      <div class="col-12 col-md-2">
-        <label class="muted small mb-1">Día</label>
-        <select id="filterDia" class="form-select form-select-sm">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div class="col-12 col-md-2">
-        <label class="muted small mb-1">Fecha</label>
-        <select id="filterFecha" class="form-select form-select-sm">
-          <option value="">Todas</option>
-        </select>
-      </div>
-      <div class="col-12 col-md-2">
-        <label class="muted small mb-1">Horario</label>
-        <select id="filterHorario" class="form-select form-select-sm">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div class="col-12 col-md-2">
-        <label class="muted small mb-1">Sede</label>
-        <select id="filterSede" class="form-select form-select-sm">
-          <option value="">Todas</option>
-        </select>
-      </div>
-      <div class="col-12 col-md-2">
-        <label class="muted small mb-1">Comisión (Área)</label>
-        <select id="filterArea" class="form-select form-select-sm">
-          <option value="">Todas</option>
-        </select>
-      </div>
-      <div class="col-12 col-md-2">
-        <label class="muted small mb-1">Resumen</label>
-        <div id="summary" class="p-2 rounded smallish"
-             style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#fff;">
-          —
-        </div>
-      </div>
-    </div>
-
-    <div class="table-responsive">
-      <table id="tabla" class="table table-hover table-striped align-middle w-100">
-        <thead>
-          <tr>
-            <th style="width:90px;">Día</th>
-            <th style="width:80px;">Fecha</th>
-            <th style="width:320px;">Sede</th>
-            <th style="width:360px;">Comisión</th>
-            <th style="width:70px;" class="text-end">Cupo</th>
-            <th style="width:80px;" class="text-end"># Inscr.</th>
-            <th style="width:70px;">%</th>
-            <th style="width:180px;">Ocupación</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div class="muted small mt-3">
-      Si “Comisión” trae comas (ej: “Ciencias Naturales, Matemática…”), se muestra bien porque el CSV se parsea correctamente.
+    <div style="display:flex;gap:10px;min-width:260px">
+      <button id="reload">Recargar</button>
+      <button id="openCsv">Abrir CSV</button>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/datatables.net@2.1.8/js/dataTables.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/js/dataTables.bootstrap5.min.js"></script>
+  <div class="filters">
+    <div>
+      <label>Día</label>
+      <select id="fDia"><option value="">Todos</option></select>
+    </div>
+    <div>
+      <label>Horario</label>
+      <select id="fHorario"><option value="">Todos</option></select>
+    </div>
+    <div>
+      <label>Sede</label>
+      <select id="fSede"><option value="">Todas</option></select>
+    </div>
+    <div>
+      <label>Comisión (Área)</label>
+      <select id="fArea"><option value="">Todas</option></select>
+    </div>
+    <div>
+      <label>Buscar (texto)</label>
+      <input id="q" placeholder="Ej: Belgrano / Arte / 14 a 17" />
+    </div>
+    <div>
+      <label>Resumen</label>
+      <div id="summary" class="summary">—</div>
+    </div>
+  </div>
 
-  <script>
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:90px">Día</th>
+          <th style="width:90px">Fecha</th>
+          <th style="width:100px">Horario</th>
+          <th style="width:320px">Sede</th>
+          <th style="width:360px">Comisión</th>
+          <th class="num" style="width:70px">Cupo</th>
+          <th class="num" style="width:80px">Inscr.</th>
+          <th style="width:80px">%</th>
+          <th style="width:210px">Ocupación</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="9">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-    // columnas del CSV
-    const colAliases = {
-      dia: ["Dia","Día","dia","día"],
-      fecha: ["Fecha","fecha"],
-      horario: ["Horario","horario"],
-      sede: ["Sede","sede"],
-      area: ["Área","Area","area","área"],
-      cupo: ["Cupo","cupo"],
-      inscritos: ["# Inscr.","#Inscr.","Inscr.","Inscritos","inscritos","# Insc","# Insc."],
-      porcentaje: ["%","Porcentaje","% ","porcentaje"]
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+  const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
+
+  const colAliases = {
+    dia: ["Dia","Día","dia","día"],
+    fecha: ["Fecha","fecha"],
+    horario: ["Horario","horario"],
+    sede: ["Sede","sede"],
+    area: ["Área","Area","area","área"],
+    cupo: ["Cupo","cupo"],
+    inscritos: ["# Inscr.","#Inscr.","Inscr.","Inscritos","inscritos","# Insc","# Insc."],
+    porcentaje: ["%","Porcentaje","% ","porcentaje"]
+  };
+
+  const $ = id => document.getElementById(id);
+
+  function pick(row, key){
+    for (const n of (colAliases[key]||[])) if (row[n] !== undefined) return row[n];
+    return "";
+  }
+  function toNumber(x){
+    const s = String(x ?? "").trim().replace(/\./g,"").replace(",",".").replace("%","");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+  function pctFrom(row){
+    const pctRaw = pick(row,"porcentaje");
+    const pct = toNumber(pctRaw);
+    if (Number.isFinite(pct)) return pct;
+    const cupo = toNumber(pick(row,"cupo"));
+    const ins  = toNumber(pick(row,"inscritos"));
+    if (Number.isFinite(cupo) && cupo>0 && Number.isFinite(ins)) return (ins/cupo)*100;
+    return NaN;
+  }
+  function diaOrder(dia){
+    const d = String(dia||"").toLowerCase();
+    const map = { lunes:1, martes:2, miercoles:3, miércoles:3, jueves:4, viernes:5, sabado:6, sábado:6, domingo:7 };
+    return map[d] ?? 99;
+  }
+  function horarioKey(h){
+    const s = String(h||"").trim();
+    const m = s.match(/(\d{1,2})(?::\d{2})?/);
+    return m ? Number(m[1]) : 999;
+  }
+  function fechaKey(fechaStr){
+    const s = String(fechaStr||"").trim();
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})/);
+    if (!m) return 999999;
+    const dd = String(m[1]).padStart(2,"0");
+    const mm = String(m[2]).padStart(2,"0");
+    return Number(mm + dd);
+  }
+
+  function esc(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  function uniqueValues(rows, key){
+    const set = new Set();
+    for (const r of rows){
+      const v = String(pick(r,key) ?? "").trim();
+      if (v) set.add(v);
+    }
+    return Array.from(set).sort((a,b)=>a.localeCompare(b,"es"));
+  }
+
+  function occ(pct){
+    if (!Number.isFinite(pct)) return {label:"—", dot:"s", bar:0};
+    if (pct>=100) return {label:"Lleno", dot:"r", bar:100};
+    if (pct>=85)  return {label:"Alta",  dot:"r", bar:Math.min(100,pct)};
+    if (pct>=50)  return {label:"Media", dot:"y", bar:Math.min(100,pct)};
+    return {label:"Baja", dot:"g", bar:Math.min(100,pct)};
+  }
+
+  let rowsAll = [];
+
+  function fillFilters(rows){
+    const add = (selId, key, firstText) => {
+      const sel = $(selId);
+      sel.innerHTML = `<option value="">${firstText}</option>` +
+        uniqueValues(rows, key).map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
     };
+    add("fDia","dia","Todos");
+    add("fHorario","horario","Todos");
+    add("fSede","sede","Todas");
+    add("fArea","area","Todas");
+  }
 
-    function pick(row, key){
-      for (const n of (colAliases[key]||[])) if (row[n] !== undefined) return row[n];
-      return "";
-    }
+  function apply(){
+    const fd = $("fDia").value.trim().toLowerCase();
+    const fh = $("fHorario").value.trim().toLowerCase();
+    const fs = $("fSede").value.trim().toLowerCase();
+    const fa = $("fArea").value.trim().toLowerCase();
+    const q  = $("q").value.trim().toLowerCase();
 
-    function toNumber(x){
-      const s = String(x ?? "").trim().replace(/\./g,"").replace(",",".").replace("%","");
-      const n = Number(s);
-      return Number.isFinite(n) ? n : NaN;
-    }
+    const filtered = rowsAll.filter(r => {
+      const dia = String(pick(r,"dia")||"").toLowerCase();
+      const fecha = String(pick(r,"fecha")||"").toLowerCase();
+      const horario = String(pick(r,"horario")||"").toLowerCase();
+      const sede = String(pick(r,"sede")||"").toLowerCase();
+      const area = String(pick(r,"area")||"").toLowerCase();
 
-    function pctFrom(row){
-      const pctRaw = pick(row,"porcentaje");
-      const pct = toNumber(pctRaw);
-      if (Number.isFinite(pct)) return pct;
+      if (fd && dia !== fd) return false;
+      if (fh && horario !== fh) return false;
+      if (fs && sede !== fs) return false;
+      if (fa && area !== fa) return false;
 
-      const cupo = toNumber(pick(row,"cupo"));
-      const ins  = toNumber(pick(row,"inscritos"));
-      if (Number.isFinite(cupo) && cupo > 0 && Number.isFinite(ins)) return (ins/cupo)*100;
-      return NaN;
-    }
-
-    function occClass(pct){
-      if (!Number.isFinite(pct)) return {label:"—", dot:"", bar:"bg-secondary"};
-      if (pct>=100) return {label:"Lleno", dot:"dot-hi", bar:"bg-danger"};
-      if (pct>=85)  return {label:"Alta",  dot:"dot-hi", bar:"bg-danger"};
-      if (pct>=50)  return {label:"Media", dot:"dot-mid", bar:"bg-warning"};
-      return {label:"Baja", dot:"dot-ok", bar:"bg-success"};
-    }
-
-    function escapeHtml(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-    }
-
-    function uniqueValues(rows, key){
-      const set = new Set();
-      for (const r of rows){
-        const v = String(pick(r,key) ?? "").trim();
-        if (v) set.add(v);
+      if (q) {
+        const blob = `${dia} ${fecha} ${horario} ${sede} ${area}`.toLowerCase();
+        if (!blob.includes(q)) return false;
       }
-      return Array.from(set).sort((a,b)=>a.localeCompare(b,"es"));
+      return true;
+    });
+
+    render(filtered);
+  }
+
+  function render(rows){
+    const tb = $("tbody");
+    if (!rows.length){
+      tb.innerHTML = `<tr><td colspan="9">Sin resultados</td></tr>`;
+      $("summary").textContent = "0 filas";
+      return;
     }
 
-    // ✅ Orden: Día -> Horario -> Sede -> Comisión
-    // Para fecha dd/mm (sin año) armamos un key mmdd
-    function fechaKey(fechaStr){
-      const s = String(fechaStr || "").trim();
-      const m = s.match(/^(\d{1,2})\/(\d{1,2})/);
-      if (!m) return 999999;
-      const dd = String(m[1]).padStart(2,"0");
-      const mm = String(m[2]).padStart(2,"0");
-      return Number(mm + dd);
-    }
+    let sumC=0, sumI=0;
+    tb.innerHTML = rows.map(r => {
+      const dia = pick(r,"dia");
+      const fecha = pick(r,"fecha");
+      const horario = pick(r,"horario");
+      const sede = pick(r,"sede");
+      const area = pick(r,"area");
+      const cupo = toNumber(pick(r,"cupo"));
+      const ins  = toNumber(pick(r,"inscritos"));
+      const pct  = pctFrom(r);
+      const pctTxt = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
+      const o = occ(pct);
 
-    function horarioKey(h){
-      const s = String(h || "").trim();
-      // busca primer número como hora inicio (ej "14 a 17", "14-17", "14:00 a 17:00")
-      const m = s.match(/(\d{1,2})(?::\d{2})?/);
-      if (!m) return 999;
-      return Number(m[1]);
-    }
+      if (Number.isFinite(cupo)) sumC += cupo;
+      if (Number.isFinite(ins)) sumI += ins;
 
-    function diaOrder(dia){
-      const d = String(dia||"").toLowerCase();
-      const map = { lunes:1, martes:2, miercoles:3, miércoles:3, jueves:4, viernes:5, sabado:6, sábado:6, domingo:7 };
-      return map[d] ?? 99;
-    }
-
-    let dt = null;
-    let rawRows = [];
-
-    function populateFilters(rows){
-      document.querySelector("#filterDia").innerHTML =
-        `<option value="">Todos</option>` + uniqueValues(rows,"dia").map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-      document.querySelector("#filterFecha").innerHTML =
-        `<option value="">Todas</option>` + uniqueValues(rows,"fecha").map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-      document.querySelector("#filterHorario").innerHTML =
-        `<option value="">Todos</option>` + uniqueValues(rows,"horario").map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-      document.querySelector("#filterSede").innerHTML =
-        `<option value="">Todas</option>` + uniqueValues(rows,"sede").map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-      document.querySelector("#filterArea").innerHTML =
-        `<option value="">Todas</option>` + uniqueValues(rows,"area").map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-    }
-
-    function renderTable(rows){
-      const tbody = document.querySelector("#tabla tbody");
-      tbody.innerHTML = "";
-
-      for (const r of rows){
-        const dia = pick(r,"dia");
-        const fecha = pick(r,"fecha");
-        const horario = pick(r,"horario");
-        const sede = pick(r,"sede");
-        const area = pick(r,"area");
-
-        const cupoRaw = pick(r,"cupo");
-        const insRaw  = pick(r,"inscritos");
-        const cupo = toNumber(cupoRaw);
-        const ins  = toNumber(insRaw);
-
-        const pct = pctFrom(r);
-        const pctText = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
-        const pctBar = Number.isFinite(pct) ? Math.max(0, Math.min(120, pct)) : 0;
-        const occ = occClass(pct);
-
-        const tr = document.createElement("tr");
-        tr.dataset.dia = String(dia||"").toLowerCase();
-        tr.dataset.fecha = String(fecha||"").toLowerCase();
-        tr.dataset.horario = String(horario||"").toLowerCase();
-        tr.dataset.sede = String(sede||"").toLowerCase();
-        tr.dataset.area = String(area||"").toLowerCase();
-
-        tr.innerHTML = `
-          <td>${escapeHtml(dia)}</td>
-          <td>${escapeHtml(fecha)}<div class="muted small">${escapeHtml(horario)}</div></td>
-          <td><span class="badge badge-soft">${escapeHtml(sede)}</span></td>
-          <td><span class="badge badge-soft">${escapeHtml(area)}</span></td>
-          <td class="text-end">${Number.isFinite(cupo) ? cupo : escapeHtml(cupoRaw)}</td>
-          <td class="text-end">${Number.isFinite(ins) ? ins : escapeHtml(insRaw)}</td>
-          <td><span class="chip"><span class="dot ${occ.dot}"></span><span>${pctText}</span></span></td>
+      return `
+        <tr>
+          <td>${esc(dia)}</td>
+          <td>${esc(fecha)}</td>
+          <td>${esc(horario)}</td>
+          <td class="wrap"><span class="badge">${esc(sede)}</span></td>
+          <td class="wrap"><span class="badge">${esc(area)}</span></td>
+          <td class="num">${Number.isFinite(cupo)?cupo:esc(pick(r,"cupo"))}</td>
+          <td class="num">${Number.isFinite(ins)?ins:esc(pick(r,"inscritos"))}</td>
           <td>
-            <div class="d-flex align-items-center gap-2">
-              <div class="progress flex-grow-1">
-                <div class="progress-bar ${occ.bar}" style="width:${Math.min(100,pctBar)}%"></div>
-              </div>
-              <span class="small muted" style="min-width:52px;">${occ.label}</span>
-            </div>
+            <div class="rowline"><span class="dot ${o.dot}"></span>${pctTxt}</div>
           </td>
-        `;
-        tbody.appendChild(tr);
+          <td>
+            <div class="barbg"><div class="bar" style="width:${o.bar}%"></div></div>
+            <div class="muted" style="font-size:12px;margin-top:4px">${o.label}</div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    const pctTotal = sumC>0 ? (sumI/sumC)*100 : NaN;
+    $("summary").textContent = Number.isFinite(pctTotal)
+      ? `${rows.length} filas · ${sumI} inscripciones · ${sumC} cupos · ${pctTotal.toFixed(0)}% ocupación`
+      : `${rows.length} filas · ${sumI} inscripciones · ${sumC} cupos`;
+  }
+
+  function load(){
+    $("openCsv").onclick = () => window.open(csvUrl, "_blank");
+    $("reload").onclick = load;
+
+    Papa.parse(csvUrl, {
+      download:true,
+      header:true,
+      skipEmptyLines:true,
+      complete: (results) => {
+        rowsAll = (results.data || []).filter(r => Object.values(r).some(v => String(v??"").trim() !== ""));
+
+        // ✅ ORDEN FIJO (NO SE ROMPE)
+        rowsAll.sort((a,b) => {
+          const d = diaOrder(pick(a,"dia")) - diaOrder(pick(b,"dia"));
+          if (d) return d;
+          const f = fechaKey(pick(a,"fecha")) - fechaKey(pick(b,"fecha"));
+          if (f) return f;
+          const h = horarioKey(pick(a,"horario")) - horarioKey(pick(b,"horario"));
+          if (h) return h;
+          const s = String(pick(a,"sede")||"").localeCompare(String(pick(b,"sede")||""),"es");
+          if (s) return s;
+          return String(pick(a,"area")||"").localeCompare(String(pick(b,"area")||""),"es");
+        });
+
+        fillFilters(rowsAll);
+        apply();
+      },
+      error: () => {
+        $("tbody").innerHTML = `<tr><td colspan="9">Error cargando CSV</td></tr>`;
       }
+    });
+  }
 
-      if (dt) { dt.destroy(); dt = null; }
+  ["fDia","fHorario","fSede","fArea","q"].forEach(id => {
+    document.addEventListener("input", (e) => { if (e.target && e.target.id === id) apply(); });
+    document.addEventListener("change", (e) => { if (e.target && e.target.id === id) apply(); });
+  });
 
-      // ✅ Clave: NO ordenar en DataTables. Respetar el orden que ya traen las filas.
-      dt = new DataTable("#tabla", {
-        pageLength: 25,
-        lengthMenu: [10,25,50,100],
-        ordering: false,
-        order: [],
-        scrollX: true,
-        scrollCollapse: true,
-        language: {
-          search: "Buscar:",
-          lengthMenu: "Mostrar _MENU_",
-          info: "Mostrando _START_ a _END_ de _TOTAL_",
-          infoEmpty: "Sin datos",
-          zeroRecords: "No encontré nada con ese filtro",
-          paginate: { first:"Primero", last:"Último", next:">", previous:"<" }
-        }
-      });
-
-      // ✅ Ajuste para que no “desaparezcan” columnas con wrap
-      dt.columns.adjust();
-
-      updateSummaryGlobal(rows);
-      wireFilters();
-      applyFilters();
-      dt.columns.adjust(); // una más después de aplicar filtros
-    }
-
-    function updateSummaryGlobal(rows){
-      const total = rows.length;
-      let sumCupo=0, sumIns=0;
-      for (const r of rows){
-        const c = toNumber(pick(r,"cupo"));
-        const i = toNumber(pick(r,"inscritos"));
-        if (Number.isFinite(c)) sumCupo += c;
-        if (Number.isFinite(i)) sumIns += i;
-      }
-      const pct = (sumCupo>0) ? (sumIns/sumCupo)*100 : NaN;
-      document.querySelector("#summary").textContent =
-        Number.isFinite(pct)
-          ? `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
-          : `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos`;
-    }
-
-    function updateSummaryFiltered(){
-      const nodes = dt.rows({ filter:"applied" }).nodes().toArray();
-      const total = nodes.length;
-      let sumCupo=0, sumIns=0;
-      for (const n of nodes){
-        const tds = n.querySelectorAll("td");
-        const cupo = toNumber(tds[4]?.textContent ?? "");
-        const ins  = toNumber(tds[5]?.textContent ?? "");
-        if (Number.isFinite(cupo)) sumCupo += cupo;
-        if (Number.isFinite(ins)) sumIns += ins;
-      }
-      const pct = (sumCupo>0) ? (sumIns/sumCupo)*100 : NaN;
-      document.querySelector("#summary").textContent =
-        Number.isFinite(pct)
-          ? `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
-          : `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos`;
-    }
-
-    function applyFilters(){
-      if (!dt) return;
-
-      const dia = document.querySelector("#filterDia").value.trim().toLowerCase();
-      const fecha = document.querySelector("#filterFecha").value.trim().toLowerCase();
-      const horario = document.querySelector("#filterHorario").value.trim().toLowerCase();
-      const sede = document.querySelector("#filterSede").value.trim().toLowerCase();
-      const area = document.querySelector("#filterArea").value.trim().toLowerCase();
-
-      $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(fn => fn.__ours !== true);
-
-      const filterFn = function(settings, data, dataIndex){
-        const row = dt.row(dataIndex).node();
-        if (!row) return true;
-
-        if (dia && row.dataset.dia !== dia) return false;
-        if (fecha && row.dataset.fecha !== fecha) return false;
-        if (horario && row.dataset.horario !== horario) return false;
-        if (sede && row.dataset.sede !== sede) return false;
-        if (area && row.dataset.area !== area) return false;
-
-        return true;
-      };
-      filterFn.__ours = true;
-      $.fn.dataTable.ext.search.push(filterFn);
-
-      dt.draw();
-      dt.columns.adjust();
-      updateSummaryFiltered();
-    }
-
-    function wireFilters(){
-      document.querySelector("#filterDia").onchange = applyFilters;
-      document.querySelector("#filterFecha").onchange = applyFilters;
-      document.querySelector("#filterHorario").onchange = applyFilters;
-      document.querySelector("#filterSede").onchange = applyFilters;
-      document.querySelector("#filterArea").onchange = applyFilters;
-
-      document.querySelector("#btnReload").onclick = () => load();
-      document.querySelector("#btnOpenCsv").href = csvUrl;
-
-      window.addEventListener("resize", () => {
-        if (dt) dt.columns.adjust();
-      });
-    }
-
-    function load(){
-      document.querySelector("#btnOpenCsv").href = csvUrl;
-
-      Papa.parse(csvUrl, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          rawRows = (results.data || []).filter(r => Object.values(r).some(v => String(v ?? "").trim() !== ""));
-
-          // ✅ ORDENAMOS ANTES de mostrar (y luego DataTables no toca el orden)
-          rawRows.sort((a,b) => {
-            // 1) Día (Lunes..Domingo)
-            const d = diaOrder(pick(a,"dia")) - diaOrder(pick(b,"dia"));
-            if (d !== 0) return d;
-
-            // 2) Fecha (dd/mm)
-            const f = fechaKey(pick(a,"fecha")) - fechaKey(pick(b,"fecha"));
-            if (f !== 0) return f;
-
-            // 3) Horario (hora inicio)
-            const h = horarioKey(pick(a,"horario")) - horarioKey(pick(b,"horario"));
-            if (h !== 0) return h;
-
-            // 4) Sede
-            const s = String(pick(a,"sede")||"").localeCompare(String(pick(b,"sede")||""), "es");
-            if (s !== 0) return s;
-
-            // 5) Comisión (Área)
-            return String(pick(a,"area")||"").localeCompare(String(pick(b,"area")||""), "es");
-          });
-
-          populateFilters(rawRows);
-          renderTable(rawRows);
-        },
-        error: (err) => {
-          console.error(err);
-          alert("No pude leer el CSV. Revisá que esté publicado.");
-        }
-      });
-    }
-
-    load();
-  </script>
+  load();
+</script>
 </body>
 </html>
