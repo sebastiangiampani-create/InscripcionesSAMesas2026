@@ -22,8 +22,8 @@
 
   .filters{
     display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:10px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:15px;
     margin-bottom:15px;
   }
 
@@ -41,8 +41,6 @@
     background:#fff;
     color:#000;
   }
-
-  button{ cursor:pointer; }
 
   .summary{
     padding:6px 8px;
@@ -114,7 +112,6 @@
   .y{background:#f4b400;}
   .r{background:#d93025;}
   .s{background:#999;}
-
 </style>
 </head>
 
@@ -125,21 +122,12 @@
 
   <div class="filters">
     <div>
-      <label>Día</label>
-      <select id="fDia"><option value="">Todos</option></select>
+      <label>Filtrar por Comisión</label>
+      <select id="fArea">
+        <option value="">Todas</option>
+      </select>
     </div>
-    <div>
-      <label>Horario</label>
-      <select id="fHorario"><option value="">Todos</option></select>
-    </div>
-    <div>
-      <label>Sede</label>
-      <select id="fSede"><option value="">Todas</option></select>
-    </div>
-    <div>
-      <label>Comisión</label>
-      <select id="fArea"><option value="">Todas</option></select>
-    </div>
+
     <div>
       <label>Resumen</label>
       <div id="summary" class="summary">—</div>
@@ -174,10 +162,6 @@
 const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
 
 const $ = id => document.getElementById(id);
-
-function pick(row, name){
-  return row[name] ?? "";
-}
 
 function toNumber(x){
   const n = Number(String(x).replace(",",".").replace("%",""));
@@ -237,6 +221,22 @@ function render(rows){
     " cupos · " + (Number.isFinite(pctTotal)?pctTotal.toFixed(0)+"%":"");
 }
 
+function fillFilter(){
+  const select = $("fArea");
+  const areas = [...new Set(rowsAll.map(r => r["Área"]||r["Area"]||""))].sort();
+  select.innerHTML = `<option value="">Todas</option>` +
+    areas.map(a => `<option value="${a}">${a}</option>`).join("");
+}
+
+function applyFilter(){
+  const value = $("fArea").value;
+  const filtered = value ? rowsAll.filter(r =>
+    (r["Área"]||r["Area"]||"") === value
+  ) : rowsAll;
+
+  render(filtered);
+}
+
 function load(){
   Papa.parse(csvUrl,{
     download:true,
@@ -251,10 +251,13 @@ function load(){
           || (a["Sede"]||"").localeCompare(b["Sede"]||"");
       });
 
+      fillFilter();
       render(rowsAll);
     }
   });
 }
+
+$("fArea").addEventListener("change", applyFilter);
 
 load();
 
