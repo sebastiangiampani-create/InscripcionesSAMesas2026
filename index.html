@@ -5,14 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Visualizador de Inscripciones</title>
 
-  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- DataTables (Bootstrap) -->
   <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
   <style>
-    body { background: #0b1220; }
-    .app-shell {
+    body { background:#0b1220; }
+    .app-shell{
       max-width: 1250px;
       margin: 18px auto;
       padding: 16px;
@@ -22,53 +20,47 @@
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 30px rgba(0,0,0,.35);
     }
-    .title { color: #fff; }
+    .title { color:#fff; }
     .muted { color: rgba(255,255,255,.7); }
 
-    /* ✅ Compacto para que entre más */
-    .table td, .table th { padding: .35rem .45rem !important; font-size: .92rem; }
-    .table { --bs-table-bg: rgba(255,255,255,.04); --bs-table-color: #fff; }
-    .table thead th {
-      background: rgba(255,255,255,.10);
-      border-bottom: 1px solid rgba(255,255,255,.14);
-    }
-    .table tbody td { border-top: 1px solid rgba(255,255,255,.08); }
-    table.dataTable { width: 100% !important; }
+    /* Compacto */
+    .table td, .table th { padding:.35rem .45rem !important; font-size:.92rem; }
+    .table { --bs-table-bg: rgba(255,255,255,.04); --bs-table-color:#fff; }
+    .table thead th { background: rgba(255,255,255,.10); border-bottom:1px solid rgba(255,255,255,.14); }
+    .table tbody td { border-top:1px solid rgba(255,255,255,.08); }
+    table.dataTable { width:100% !important; }
 
-    /* ✅ No “desaparece” texto: Sede y Área pueden bajar de línea */
-    #tabla td:nth-child(4),
-    #tabla td:nth-child(5) {
+    /* No ocultar texto largo */
+    #tabla td:nth-child(3),
+    #tabla td:nth-child(4) {
       white-space: normal !important;
       word-break: break-word;
       max-width: 320px;
     }
 
-    .badge-soft {
+    .badge-soft{
       background: rgba(255,255,255,.12);
       border: 1px solid rgba(255,255,255,.18);
-      color: #fff;
-      font-weight: 600;
+      color:#fff; font-weight:600;
     }
-    .progress { height: 10px; background: rgba(255,255,255,.12); }
-    .progress-bar { transition: width .25s ease; }
+    .progress{ height:10px; background: rgba(255,255,255,.12); }
+    .progress-bar{ transition: width .25s ease; }
 
-    .dt-search input, .dt-length select,
-    .form-select {
+    .dt-search input, .dt-length select, .form-select{
       background: rgba(255,255,255,.08) !important;
       border: 1px solid rgba(255,255,255,.18) !important;
-      color: #fff !important;
+      color:#fff !important;
     }
-    .dataTables_info, .dataTables_paginate, .dataTables_length, .dataTables_filter, label, .pagination * {
+    .dataTables_info, .dataTables_paginate, .dataTables_length, .dataTables_filter, label, .pagination *{
       color: rgba(255,255,255,.8) !important;
     }
 
     .chip { display:inline-flex; align-items:center; gap:8px; }
     .dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
-    .dot-ok  { background:#22c55e; }
-    .dot-mid { background:#f59e0b; }
-    .dot-hi  { background:#ef4444; }
-
-    .smallish { font-size: .92rem; }
+    .dot-ok{ background:#22c55e; }
+    .dot-mid{ background:#f59e0b; }
+    .dot-hi{ background:#ef4444; }
+    .smallish{ font-size:.92rem; }
   </style>
 </head>
 
@@ -77,16 +69,15 @@
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
       <div>
         <h1 class="title h3 mb-1">Visualizador de Inscripciones</h1>
-        <div class="muted small">Google Sheets (CSV) → filtros + tabla compacta + ocupación.</div>
+        <div class="muted small">CSV → filtros (Fecha/Horario/Sede/Área/Ocupación) + barra de %.</div>
       </div>
-
       <div class="d-flex gap-2 align-items-center">
         <button id="btnReload" class="btn btn-outline-light btn-sm">🔄 Recargar</button>
         <a id="btnOpenCsv" class="btn btn-light btn-sm" target="_blank" rel="noopener">Abrir CSV</a>
       </div>
     </div>
 
-    <!-- ✅ FILTROS -->
+    <!-- ✅ FILTROS (ESTÁN ACÁ) -->
     <div class="row g-2 mb-3">
       <div class="col-12 col-md-2">
         <label class="muted small mb-1">Fecha</label>
@@ -94,26 +85,30 @@
           <option value="">Todas</option>
         </select>
       </div>
+
       <div class="col-12 col-md-2">
         <label class="muted small mb-1">Horario</label>
         <select id="filterHorario" class="form-select form-select-sm">
           <option value="">Todos</option>
         </select>
       </div>
+
       <div class="col-12 col-md-2">
         <label class="muted small mb-1">Sede</label>
         <select id="filterSede" class="form-select form-select-sm">
           <option value="">Todas</option>
         </select>
       </div>
+
       <div class="col-12 col-md-2">
         <label class="muted small mb-1">Área</label>
         <select id="filterArea" class="form-select form-select-sm">
           <option value="">Todas</option>
         </select>
       </div>
+
       <div class="col-12 col-md-2">
-        <label class="muted small mb-1">Mostrar solo</label>
+        <label class="muted small mb-1">Ocupación</label>
         <select id="filterOcupacion" class="form-select form-select-sm">
           <option value="">Todo</option>
           <option value="low">Baja (&lt; 50%)</option>
@@ -122,6 +117,7 @@
           <option value="full">Lleno (&gt;= 100%)</option>
         </select>
       </div>
+
       <div class="col-12 col-md-2">
         <label class="muted small mb-1">Resumen</label>
         <div id="summary" class="p-2 rounded smallish"
@@ -150,103 +146,109 @@
     </div>
 
     <div class="muted small mt-3">
-      Nota: aunque en “Área” haya comas (ej: “Ciencias Naturales, Matemática…”), esto se parsea bien.
+      Si en “Área” hay comas, no pasa nada: CSV bien parseado.
     </div>
   </div>
 
-  <!-- PapaParse (CSV real) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <!-- jQuery + DataTables -->
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/datatables.net@2.1.8/js/dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@2.1.8/js/dataTables.bootstrap5.min.js"></script>
 
   <script>
-    // ✅ Tu CSV publicado
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2avA92LvHh37HuCigjLogbT2hhoLprim9OJu7tI9Do2jU6u1hnEsrMov5UKpJHqNcx9fNESB2W3d4/pub?output=csv";
 
-    // Mapeo flexible (por si cambian tildes/nombres)
     const colAliases = {
-      fecha: ["Fecha", "fecha"],
-      horario: ["Horario", "horario"],
-      sede: ["Sede", "sede"],
-      area: ["Área", "Area", "area", "área"],
-      cupo: ["Cupo", "cupo"],
-      inscritos: ["# Inscr.", "#Inscr.", "Inscr.", "Inscritos", "inscritos", "Inscriptos", "# Insc", "# Insc."],
-      porcentaje: ["%", "Porcentaje", "% ", "porcentaje"]
+      fecha: ["Fecha","fecha"],
+      horario: ["Horario","horario"],
+      sede: ["Sede","sede"],
+      area: ["Área","Area","area","área"],
+      cupo: ["Cupo","cupo"],
+      inscritos: ["# Inscr.","#Inscr.","Inscr.","Inscritos","inscritos","# Insc","# Insc."],
+      porcentaje: ["%","Porcentaje","% ","porcentaje"]
     };
 
-    function pick(row, key) {
-      const names = colAliases[key] || [];
-      for (const n of names) if (row[n] !== undefined) return row[n];
+    function pick(row, key){
+      for (const n of (colAliases[key]||[])) if (row[n] !== undefined) return row[n];
       return "";
     }
 
-    function toNumber(x) {
-      if (x === null || x === undefined) return NaN;
-      const s = String(x).trim()
-        .replace(/\./g, "")   // miles
-        .replace(",", ".")    // decimal
-        .replace("%", "");
-      const num = Number(s);
-      return Number.isFinite(num) ? num : NaN;
+    function toNumber(x){
+      const s = String(x ?? "").trim().replace(/\./g,"").replace(",",".").replace("%","");
+      const n = Number(s);
+      return Number.isFinite(n) ? n : NaN;
     }
 
-    function pctFrom(row) {
-      const pctRaw = pick(row, "porcentaje");
-      let pct = toNumber(pctRaw);
+    function pctFrom(row){
+      const pctRaw = pick(row,"porcentaje");
+      const pct = toNumber(pctRaw);
       if (Number.isFinite(pct)) return pct;
 
-      const cupo = toNumber(pick(row, "cupo"));
-      const ins = toNumber(pick(row, "inscritos"));
-      if (Number.isFinite(cupo) && cupo > 0 && Number.isFinite(ins)) return (ins / cupo) * 100;
+      const cupo = toNumber(pick(row,"cupo"));
+      const ins = toNumber(pick(row,"inscritos"));
+      if (Number.isFinite(cupo) && cupo>0 && Number.isFinite(ins)) return (ins/cupo)*100;
       return NaN;
     }
 
-    function occClass(pct) {
-      if (!Number.isFinite(pct)) return { label: "—", dot: "", bar: "bg-secondary" };
-      if (pct >= 100) return { label: "Lleno", dot: "dot-hi", bar: "bg-danger" };
-      if (pct >= 85)  return { label: "Alta",  dot: "dot-hi", bar: "bg-danger" };
-      if (pct >= 50)  return { label: "Media", dot: "dot-mid", bar: "bg-warning" };
-      return { label: "Baja", dot: "dot-ok", bar: "bg-success" };
+    function occClass(pct){
+      if (!Number.isFinite(pct)) return {label:"—", dot:"", bar:"bg-secondary"};
+      if (pct>=100) return {label:"Lleno", dot:"dot-hi", bar:"bg-danger"};
+      if (pct>=85)  return {label:"Alta",  dot:"dot-hi", bar:"bg-danger"};
+      if (pct>=50)  return {label:"Media", dot:"dot-mid", bar:"bg-warning"};
+      return {label:"Baja", dot:"dot-ok", bar:"bg-success"};
     }
 
-    function escapeHtml(s) {
+    function escapeHtml(s){
       return String(s ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
 
-    function uniqueValues(rows, key) {
+    function uniqueValues(rows, key){
       const set = new Set();
-      for (const r of rows) {
-        const v = (pick(r, key) || "").trim();
+      for (const r of rows){
+        const v = String(pick(r,key) ?? "").trim();
         if (v) set.add(v);
       }
-      return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
+      return Array.from(set).sort((a,b)=>a.localeCompare(b,"es"));
     }
 
     let dt = null;
     let rawRows = [];
 
-    function renderTable(rows) {
+    function populateFilters(rows){
+      const fechas = uniqueValues(rows,"fecha");
+      const horarios = uniqueValues(rows,"horario");
+      const sedes = uniqueValues(rows,"sede");
+      const areas = uniqueValues(rows,"area");
+
+      document.querySelector("#filterFecha").innerHTML =
+        `<option value="">Todas</option>` + fechas.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+
+      document.querySelector("#filterHorario").innerHTML =
+        `<option value="">Todos</option>` + horarios.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+
+      document.querySelector("#filterSede").innerHTML =
+        `<option value="">Todas</option>` + sedes.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+
+      document.querySelector("#filterArea").innerHTML =
+        `<option value="">Todas</option>` + areas.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    }
+
+    function renderTable(rows){
       const tbody = document.querySelector("#tabla tbody");
       tbody.innerHTML = "";
 
-      for (const r of rows) {
-        const fecha = pick(r, "fecha");
-        const horario = pick(r, "horario");
-        const sede = pick(r, "sede");
-        const area = pick(r, "area");
+      for (const r of rows){
+        const fecha = pick(r,"fecha");
+        const horario = pick(r,"horario");
+        const sede = pick(r,"sede");
+        const area = pick(r,"area");
 
-        const cupoRaw = pick(r, "cupo");
-        const insRaw  = pick(r, "inscritos");
+        const cupoRaw = pick(r,"cupo");
+        const insRaw = pick(r,"inscritos");
         const cupo = toNumber(cupoRaw);
-        const ins  = toNumber(insRaw);
+        const ins = toNumber(insRaw);
 
         const pct = pctFrom(r);
         const pctText = Number.isFinite(pct) ? `${pct.toFixed(0)}%` : "—";
@@ -254,14 +256,14 @@
         const occ = occClass(pct);
 
         const occKey = Number.isFinite(pct)
-          ? (pct >= 100 ? "full" : (pct >= 85 ? "high" : (pct >= 50 ? "mid" : "low")))
+          ? (pct>=100 ? "full" : (pct>=85 ? "high" : (pct>=50 ? "mid" : "low")))
           : "";
 
         const tr = document.createElement("tr");
-        tr.dataset.fecha = (fecha || "").toLowerCase();
-        tr.dataset.horario = (horario || "").toLowerCase();
-        tr.dataset.sede = (sede || "").toLowerCase();
-        tr.dataset.area = (area || "").toLowerCase();
+        tr.dataset.fecha = String(fecha||"").toLowerCase();
+        tr.dataset.horario = String(horario||"").toLowerCase();
+        tr.dataset.sede = String(sede||"").toLowerCase();
+        tr.dataset.area = String(area||"").toLowerCase();
         tr.dataset.occ = occKey;
 
         tr.innerHTML = `
@@ -271,16 +273,11 @@
           <td><span class="badge badge-soft">${escapeHtml(area)}</span></td>
           <td class="text-end">${Number.isFinite(cupo) ? cupo : escapeHtml(cupoRaw)}</td>
           <td class="text-end">${Number.isFinite(ins) ? ins : escapeHtml(insRaw)}</td>
-          <td>
-            <span class="chip">
-              <span class="dot ${occ.dot}"></span>
-              <span>${pctText}</span>
-            </span>
-          </td>
+          <td><span class="chip"><span class="dot ${occ.dot}"></span><span>${pctText}</span></span></td>
           <td style="min-width:160px;">
             <div class="d-flex align-items-center gap-2">
               <div class="progress flex-grow-1">
-                <div class="progress-bar ${occ.bar}" style="width:${Math.min(100, pctBar)}%"></div>
+                <div class="progress-bar ${occ.bar}" style="width:${Math.min(100,pctBar)}%"></div>
               </div>
               <span class="small muted" style="min-width:52px;">${occ.label}</span>
             </div>
@@ -293,8 +290,8 @@
 
       dt = new DataTable("#tabla", {
         pageLength: 25,
-        lengthMenu: [10, 25, 50, 100],
-        order: [[0, "asc"], [1, "asc"], [3, "asc"]],
+        lengthMenu: [10,25,50,100],
+        order: [[0,"asc"],[1,"asc"],[3,"asc"]],
         scrollX: true,
         scrollCollapse: true,
         language: {
@@ -303,35 +300,78 @@
           info: "Mostrando _START_ a _END_ de _TOTAL_",
           infoEmpty: "Sin datos",
           zeroRecords: "No encontré nada con ese filtro",
-          paginate: { first: "Primero", last: "Último", next: ">", previous: "<" }
+          paginate: { first:"Primero", last:"Último", next:">", previous:"<" }
         }
       });
 
       updateSummaryGlobal(rows);
-      wireFilters();   // asegura listeners
-      applyFilters();  // aplica filtro inicial
+      wireFilters();
+      applyFilters();
     }
 
-    function populateFilters(rows) {
-      const fechas = uniqueValues(rows, "fecha");
-      const horarios = uniqueValues(rows, "horario");
-      const sedes = uniqueValues(rows, "sede");
-      const areas = uniqueValues(rows, "area");
-
-      document.querySelector("#filterFecha").innerHTML =
-        `<option value="">Todas</option>` + fechas.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-
-      document.querySelector("#filterHorario").innerHTML =
-        `<option value="">Todos</option>` + horarios.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-
-      document.querySelector("#filterSede").innerHTML =
-        `<option value="">Todas</option>` + sedes.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-
-      document.querySelector("#filterArea").innerHTML =
-        `<option value="">Todas</option>` + areas.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    function updateSummaryGlobal(rows){
+      const total = rows.length;
+      let sumCupo=0, sumIns=0;
+      for (const r of rows){
+        const c = toNumber(pick(r,"cupo"));
+        const i = toNumber(pick(r,"inscritos"));
+        if (Number.isFinite(c)) sumCupo += c;
+        if (Number.isFinite(i)) sumIns += i;
+      }
+      const pct = (sumCupo>0) ? (sumIns/sumCupo)*100 : NaN;
+      document.querySelector("#summary").textContent =
+        Number.isFinite(pct)
+          ? `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
+          : `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos`;
     }
 
-    function wireFilters() {
+    function updateSummaryFiltered(){
+      const nodes = dt.rows({ filter:"applied" }).nodes().toArray();
+      const total = nodes.length;
+      let sumCupo=0, sumIns=0;
+      for (const n of nodes){
+        const tds = n.querySelectorAll("td");
+        const cupo = toNumber(tds[4]?.textContent ?? "");
+        const ins  = toNumber(tds[5]?.textContent ?? "");
+        if (Number.isFinite(cupo)) sumCupo += cupo;
+        if (Number.isFinite(ins)) sumIns += ins;
+      }
+      const pct = (sumCupo>0) ? (sumIns/sumCupo)*100 : NaN;
+      document.querySelector("#summary").textContent =
+        Number.isFinite(pct)
+          ? `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
+          : `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos`;
+    }
+
+    function applyFilters(){
+      if (!dt) return;
+
+      const fecha = document.querySelector("#filterFecha").value.trim().toLowerCase();
+      const horario = document.querySelector("#filterHorario").value.trim().toLowerCase();
+      const sede = document.querySelector("#filterSede").value.trim().toLowerCase();
+      const area = document.querySelector("#filterArea").value.trim().toLowerCase();
+      const occ = document.querySelector("#filterOcupacion").value;
+
+      $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(fn => fn.__ours !== true);
+
+      const filterFn = function(settings, data, dataIndex){
+        const row = dt.row(dataIndex).node();
+        if (!row) return true;
+        if (fecha && row.dataset.fecha !== fecha) return false;
+        if (horario && row.dataset.horario !== horario) return false;
+        if (sede && row.dataset.sede !== sede) return false;
+        if (area && row.dataset.area !== area) return false;
+        if (occ && row.dataset.occ !== occ) return false;
+        return true;
+      };
+      filterFn.__ours = true;
+      $.fn.dataTable.ext.search.push(filterFn);
+
+      dt.draw();
+      updateSummaryFiltered();
+    }
+
+    function wireFilters(){
       document.querySelector("#filterFecha").onchange = applyFilters;
       document.querySelector("#filterHorario").onchange = applyFilters;
       document.querySelector("#filterSede").onchange = applyFilters;
@@ -342,77 +382,7 @@
       document.querySelector("#btnOpenCsv").href = csvUrl;
     }
 
-    function applyFilters() {
-      if (!dt) return;
-
-      const fecha = document.querySelector("#filterFecha").value.trim().toLowerCase();
-      const horario = document.querySelector("#filterHorario").value.trim().toLowerCase();
-      const sede = document.querySelector("#filterSede").value.trim().toLowerCase();
-      const area = document.querySelector("#filterArea").value.trim().toLowerCase();
-      const occ = document.querySelector("#filterOcupacion").value;
-
-      // quitamos filtro previo "nuestro"
-      $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(fn => fn.__ours !== true);
-
-      const filterFn = function(settings, data, dataIndex) {
-        const row = dt.row(dataIndex).node();
-        if (!row) return true;
-
-        if (fecha && row.dataset.fecha !== fecha) return false;
-        if (horario && row.dataset.horario !== horario) return false;
-        if (sede && row.dataset.sede !== sede) return false;
-        if (area && row.dataset.area !== area) return false;
-        if (occ && row.dataset.occ !== occ) return false;
-
-        return true;
-      };
-      filterFn.__ours = true;
-      $.fn.dataTable.ext.search.push(filterFn);
-
-      dt.draw();
-      updateSummaryFiltered();
-    }
-
-    function updateSummaryGlobal(rows) {
-      const total = rows.length;
-      let sumCupo = 0, sumIns = 0;
-
-      for (const r of rows) {
-        const c = toNumber(pick(r,"cupo"));
-        const i = toNumber(pick(r,"inscritos"));
-        if (Number.isFinite(c)) sumCupo += c;
-        if (Number.isFinite(i)) sumIns += i;
-      }
-
-      const pct = (sumCupo > 0) ? (sumIns / sumCupo) * 100 : NaN;
-      document.querySelector("#summary").textContent =
-        Number.isFinite(pct)
-          ? `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
-          : `${total} filas · ${sumIns} inscripciones · ${sumCupo} cupos`;
-    }
-
-    function updateSummaryFiltered() {
-      const nodes = dt.rows({ filter: "applied" }).nodes().toArray();
-      const total = nodes.length;
-
-      let sumCupo = 0, sumIns = 0;
-
-      for (const n of nodes) {
-        const tds = n.querySelectorAll("td");
-        const cupo = toNumber(tds[4]?.textContent ?? "");
-        const ins  = toNumber(tds[5]?.textContent ?? "");
-        if (Number.isFinite(cupo)) sumCupo += cupo;
-        if (Number.isFinite(ins)) sumIns += ins;
-      }
-
-      const pct = (sumCupo > 0) ? (sumIns / sumCupo) * 100 : NaN;
-      document.querySelector("#summary").textContent =
-        Number.isFinite(pct)
-          ? `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos · ${pct.toFixed(0)}% ocupación`
-          : `${total} filas (filtradas) · ${sumIns} inscripciones · ${sumCupo} cupos`;
-    }
-
-    function load() {
+    function load(){
       document.querySelector("#btnOpenCsv").href = csvUrl;
 
       Papa.parse(csvUrl, {
